@@ -1,0 +1,47 @@
+---
+title: "Final Project"
+author: "RKJohnson"
+date: "May 11, 2016"
+output: html_document
+purpose: find and view dmr between pre-T1D cases (n=31) and controls (n=30) from 450K methylation
+---
+1. Create .bed from dmp data
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+load("/home/linuxshared/vanderll/Norris/Reports/v1.processingAndQC/correctLabels/forAnalysis.v1/dmp.preT1D.Rdata")
+ls()
+
+dmp <- data.frame(dmp)
+
+head(dmp)
+#rownames are the gene annotations
+
+#make variable out of row names
+dmp$probes = rownames(dmp)
+rownames(dmp) = NULL
+
+#create object for annotation
+anno = read.csv(file = "/home/linuxshared/vanderll/Norris/Reports/v1.processingAndQC/correctLabels/forAnalysis.v1/probeAnnotation.csv")
+
+#merge annotation and pval objects
+probepval <- merge(x = dmp, y = anno, by.x = c("probes"), by.y = c("X"))
+
+#make stop position
+probepval$stop <- probepval$pos + 1
+
+#save .bed file with chr, start, stop, p-value signal
+dmr.bed <- probepval[c("chr", "pos", "stop", "pval")]
+
+write.table(dmr.bed, file = file.path("/home/linuxshared/vanderll/Norris/Reports/v1.processingAndQC/correctLabels/forAnalysis.v1/dmr.bed"), sep = "\t", col.names = F, quote = F)
+
+```
+
+2. Find differentially methylated regions (DMR) using the python program comb-p
+See program pt1dcomb.sh
+
+3. Create ucsc track to visualize DMRs. 
+See program pt1ducsc.sh
+
+UCSC track 
+https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A1-23366400&hgsid=493805839_P7KlPFymduayAdTRmwYXtpXdnryb
